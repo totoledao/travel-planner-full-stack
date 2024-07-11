@@ -65,7 +65,7 @@
 
 **Plan and organize trips with your friends. Choose destinations, finalize itineraries, save useful links and make every journey memorable!**
 
-The main goal in developing this app was to improve my proficiency in Go while broadening my knowledge of back-end concepts by working with technologies like Docker, Postgres and [Mailpit][mailpit-url]. The front-end development aimed to complete the project and stay updated with the latest features of Next.js 14 and Expo 51.
+The primary objective in developing this app was to improve my proficiency in Go while broadening my knowledge of back-end development. It uses technologies such as Docker, [Mailpit][mailpit-url], PostgreSQL and tools like [Swagger](https://editor.swagger.io/), [sqlc](https://github.com/sqlc-dev/sqlc) and [tern](https://github.com/jackc/tern) to streamline database configuration and boilerplate setup. The frontend development aimed to provide a good experience for interacting with the project and staying updated with the latest features of Next.js 14 and Expo 51.
 <br>App created based on Next Level Week Journey by [Rocketseat](https://rocketseat.com.br/).
 
 ### Built With

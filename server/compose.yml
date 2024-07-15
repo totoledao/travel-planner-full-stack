@@ -8,6 +8,30 @@ services:
     volumes:
       - db:/var/lib/postgresql/data
 
+  app:
+    build: .
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+    env_file: ".env"
+    environment:
+      - POSTGRES_HOST=db
+    depends_on:
+      - db
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    env_file: ".env"
+    ports:
+      - 8081:80
+    depends_on:
+      - db
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+
 volumes:
   db:
+    driver: local
+  pgadmin:
     driver: local

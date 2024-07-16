@@ -2,11 +2,13 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"server/internal/api/spec"
 	"server/internal/pgstore"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,15 +18,19 @@ import (
 type store interface {
 	GetParticipant(ctx context.Context, participantID uuid.UUID) (pgstore.Participant, error)
 	ConfirmParticipant(ctx context.Context, participantID uuid.UUID) error
+	CreateTrip(ctx context.Context, pool *pgxpool.Pool, params spec.CreateTripRequest) (uuid.UUID, error)
 }
 
 type API struct {
-	store  store
-	logger *zap.Logger
+	store     store
+	logger    *zap.Logger
+	validator *validator.Validate
+	pool      *pgxpool.Pool
 }
 
 func NewAPI(pool *pgxpool.Pool, logger *zap.Logger) API {
-	return API{pgstore.New(pool), logger}
+	validator := validator.New(validator.WithRequiredStructEnabled())
+	return API{pgstore.New(pool), logger, validator, pool}
 }
 
 // Confirms a participant on a trip.

@@ -67,7 +67,23 @@ func (api *API) PatchParticipantsParticipantIDConfirm(w http.ResponseWriter, r *
 // Create a new trip
 // (POST /trips)
 func (api *API) PostTrips(w http.ResponseWriter, r *http.Request) *spec.Response {
-	panic("not implemented") // TODO: Implement
+	var body spec.CreateTripRequest
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		return spec.PostTripsJSON400Response(spec.Error{Message: "Invalid JSON"})
+	}
+
+	err = api.validator.Struct(body)
+	if err != nil {
+		return spec.PostTripsJSON400Response(spec.Error{Message: "Invalid input: " + err.Error()})
+	}
+
+	tripID, err := api.store.CreateTrip(r.Context(), api.pool, body)
+	if err != nil {
+		return spec.PostTripsJSON400Response(spec.Error{Message: "Failed tio create trip, try again"})
+	}
+
+	return spec.PostTripsJSON201Response(spec.CreateTripResponse{TripID: tripID.String()})
 }
 
 // Get a trip details.

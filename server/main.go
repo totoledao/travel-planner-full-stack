@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"server/internal/api"
 	"server/internal/api/spec"
+	"server/internal/mail/mailpit"
 	"syscall"
 	"time"
 
@@ -67,7 +68,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	si := api.NewAPI(pool, logger)
+	si := api.NewAPI(pool, logger, mailpit.NewMailpit(pool))
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID, middleware.Recoverer, middleware.Logger)
 	r.Mount("/", spec.Handler(&si))

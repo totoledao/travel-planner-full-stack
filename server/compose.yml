@@ -9,6 +9,7 @@ services:
       - 8025:8025
     volumes:
       - mailpit:/data
+
   db:
     image: postgres:latest
     restart: unless-stopped

@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"server/internal/api"
 	"server/internal/api/spec"
-	"server/internal/mail/mailpit"
+	"server/internal/email"
 	"syscall"
 	"time"
 
@@ -17,6 +17,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/wneessen/go-mail"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -68,7 +69,13 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	si := api.NewAPI(pool, logger, mailpit.NewMailpit(pool))
+	mailClient, err := mail.NewClient("mailpit", mail.WithTLSPortPolicy(mail.NoTLS), mail.WithPort(1025))
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+	defer mailClient.Close()
+
+	si := api.NewAPI(pool, logger, email.NewEmail(pool, mailClient))
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID, middleware.Recoverer, middleware.Logger)
 	r.Mount("/", spec.Handler(&si))

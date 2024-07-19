@@ -1,4 +1,4 @@
-package mailpit
+package email
 
 import (
 	"context"
@@ -15,32 +15,33 @@ type store interface {
 	GetTrip(context.Context, uuid.UUID) (pgstore.Trip, error)
 }
 
-type Mailpit struct {
-	store store
+type Email struct {
+	store  store
+	client *mail.Client
 }
 
-func NewMailpit(pool *pgxpool.Pool) Mailpit {
-	return Mailpit{pgstore.New(pool)}
+func NewEmail(pool *pgxpool.Pool, client *mail.Client) Email {
+	return Email{pgstore.New(pool), client}
 }
 
-func (mp Mailpit) SendConfirmTripEmailToTripOwner(tripID uuid.UUID) error {
+func (m Email) SendConfirmTripEmailToTripOwner(tripID uuid.UUID) error {
 	const timeout = 30 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	trip, err := mp.store.GetTrip(ctx, tripID)
+	trip, err := m.store.GetTrip(ctx, tripID)
 	if err != nil {
-		return fmt.Errorf("Mailpit: failed to get trip for SendConfirmTripEmailToTripOwner: %w", err)
+		return fmt.Errorf("Email: failed to get trip for SendConfirmTripEmailToTripOwner: %w", err)
 	}
 
 	msg := mail.NewMsg()
-	err = msg.From("mailpit@travelplanner.com")
+	err = msg.From("no-reply@travelplanner.com")
 	if err != nil {
-		return fmt.Errorf("Mailpit: failed to set From in email for SendConfirmTripEmailToTripOwner: %w", err)
+		return fmt.Errorf("Email: failed to set From in email for SendConfirmTripEmailToTripOwner: %w", err)
 	}
 	err = msg.To(trip.OwnerEmail)
 	if err != nil {
-		return fmt.Errorf("Mailpit: failed to set To in email for SendConfirmTripEmailToTripOwner: %w", err)
+		return fmt.Errorf("Email: failed to set To in email for SendConfirmTripEmailToTripOwner: %w", err)
 	}
 	msg.Subject(fmt.Sprintf("Confirm your trip to %s", trip.Destination))
 	body := fmt.Sprintf(`
@@ -65,14 +66,9 @@ func (mp Mailpit) SendConfirmTripEmailToTripOwner(tripID uuid.UUID) error {
 	)
 	msg.SetBodyString(mail.TypeTextPlain, body)
 
-	client, err := mail.NewClient("mailpit", mail.WithTLSPortPolicy(mail.NoTLS), mail.WithPort(1025))
+	err = m.client.DialAndSend(msg)
 	if err != nil {
-		return fmt.Errorf("Mailpit: failed to create mail client for SendConfirmTripEmailToTripOwner: %w", err)
-	}
-
-	err = client.DialAndSend(msg)
-	if err != nil {
-		return fmt.Errorf("Mailpit: failed to send e-mail message for SendCon	firmTripEmailToTripOwner: %w", err)
+		return fmt.Errorf("Email: failed to send e-mail message for SendCon	firmTripEmailToTripOwner: %w", err)
 	}
 
 	return nil

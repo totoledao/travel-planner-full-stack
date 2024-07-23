@@ -285,18 +285,30 @@ func (api *API) GetTripsTripIDConfirm(w http.ResponseWriter, r *http.Request, tr
 	if err != nil {
 		return spec.GetTripsTripIDConfirmJSON400Response(spec.Error{Message: "Failed to get participants for trip, try again"})
 	}
-	for _, v := range participants {
-		go func() {
-			err := api.mailer.SendInviteToTripEmail(id, string(v.Email))
-			if err != nil {
-				api.logger.Error(
-					"failed to send email on GetTripsTripIDConfirm",
-					zap.Error(err),
-					zap.String("trip_id", tripID),
-				)
-			}
-		}()
-	}
+
+	go func() {
+		sem := make(chan struct{}, 1)
+
+		for _, v := range participants {
+			sem <- struct{}{} // Acquire a slot
+			go func(email string) {
+				defer func() { <-sem }() // Release the slot
+				err := api.mailer.SendInviteToTripEmail(id, email)
+				if err != nil {
+					api.logger.Error(
+						"failed to send email on GetTripsTripIDConfirm",
+						zap.Error(err),
+						zap.String("trip_id", tripID),
+					)
+				}
+			}(string(v.Email))
+		}
+
+		// Wait for all goroutines to finish
+		for i := 0; i < cap(sem); i++ {
+			sem <- struct{}{}
+		}
+	}()
 
 	return spec.GetTripsTripIDConfirmJSON204Response(nil)
 }

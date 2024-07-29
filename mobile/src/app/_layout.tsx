@@ -4,6 +4,8 @@ import {
   Inter_600SemiBold,
   useFonts,
 } from "@expo-google-fonts/inter";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar, View } from "react-native";
@@ -13,6 +15,9 @@ import { useCallback } from "react";
 
 // Keep the splash screen visible while fetching resources
 SplashScreen.preventAutoHideAsync();
+
+// Add UTC plugin to dayjs
+dayjs.extend(utc);
 
 export default function Layout() {
   const [fontsLoaded] = useFonts({
